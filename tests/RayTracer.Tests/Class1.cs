@@ -42,6 +42,27 @@ namespace RayTracer.Tests
             s.AddLightSource(new PointLight(new RealColor(1, 1, 1), 0, 240, -100));
             s.AddLightSource(new PointLight(new RealColor(0.6f, 0.6f, 0.6f), 640, 240, -10000));
 
+            RenderSceneToFile(s);
+        }
+
+        [Test]
+        public void Render_Ball_on_plane()
+        {
+            var s = new Scene();
+
+            var mirror = new Material { Diffuse = new RealColor(Color.White), ReflectionCoefficient = 1.0 };
+            var matt = new Material { Diffuse = new RealColor(Color.Red), ReflectionCoefficient = 0 };
+
+            s.AddObject(new Sphere(100, 320, 300, 0, matt));
+
+            s.AddLightSource(new PointLight(new RealColor(1, 1, 1), 0, 240, -100));
+            s.AddLightSource(new PointLight(new RealColor(0.6f, 0.6f, 0.6f), 640, 240, -10000));
+
+            RenderSceneToFile(s);
+        }
+
+        private static void RenderSceneToFile(Scene s)
+        {
             var t = new Tracer(s);
             //t.Background = Color.Gray;
 

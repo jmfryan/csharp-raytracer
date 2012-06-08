@@ -84,7 +84,7 @@ namespace RayTracer
                 if (reflectedColor == null)
                     return materialColor;
 
-                return materialColor*(1 - intersection.Obj.Material.ReflectionCoefficient) +
+                return materialColor +
                        reflectedColor*intersection.Obj.Material.ReflectionCoefficient;
             }
 

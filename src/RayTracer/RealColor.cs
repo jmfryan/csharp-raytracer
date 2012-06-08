@@ -11,9 +11,9 @@ namespace RayTracer
 
         public RealColor(Color c) : this()
         {
-            R = c.R / 255f;
-            G = c.G / 255f;
-            B = c.B / 255f;
+            R = c.R / 255d;
+            G = c.G / 255d;
+            B = c.B / 255d;
         }
 
         public RealColor(double r, double g, double b) : this()
