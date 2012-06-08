@@ -28,28 +28,32 @@ namespace RayTracer
             {
                 for (int x = 0; x < Width; x++)
                 {
-                    bm.SetPixel(x, y, GetColorForViewPortPixel(x, y));        
+                    bm.SetPixel(x, y, GetColorForViewPortPixel(x, y).ToColor());        
                 }
             }
 
             return bm;
         }
 
-        private Color GetColorForViewPortPixel(int x, int y)
+        private RealColor GetColorForViewPortPixel(int x, int y)
         {
             var ray = GetRayForViewportPixel(x, y);
+            return GetColorForRay(ray) ?? new RealColor(Background);
+        }
 
-            double r = 0, g = 0, b = 0;
+        private RealColor? GetColorForRay(Ray viewRay, int iteration = 1)
+        {
+            var materialColor = new RealColor();
 
             var intersection = Scene.Objects
-                                         .Select(o => new { Obj = o, Dist = o.Intersect(ray)})
-                                         .Where(o => o.Dist != null)
-                                         .OrderBy(f => f.Dist)
-                                         .FirstOrDefault();
+                .Select(o => new {Obj = o, Dist = o.Intersect(viewRay)})
+                .Where(o => o.Dist != null)
+                .OrderBy(f => f.Dist)
+                .FirstOrDefault();
 
             if (intersection != null)
             {
-                var start = ray.Start + (intersection.Dist.Value*ray.Direction);
+                var start = viewRay.Start + (intersection.Dist.Value*viewRay.Direction);
                 var normal = start - intersection.Obj.Position;
                 normal.Normalize();
 
@@ -57,7 +61,7 @@ namespace RayTracer
                 {
                     var lightRay = Ray.FromStartAndEndPoints(start, light.Position);
 
-                    if(Scene.Objects.Any(o => o.Intersect(lightRay) != null))
+                    if (Scene.Objects.Any(o => o.Intersect(lightRay) != null))
                         continue;
 
                     if (Vector3D.DotProduct(normal, lightRay.Direction) < 0)
@@ -65,15 +69,27 @@ namespace RayTracer
 
                     var lambert = Vector3D.DotProduct(lightRay.Direction, normal);
 
-                    r += lambert * light.Color.R * intersection.Obj.Material.Diffuse.R;
-                    g += lambert * light.Color.G * intersection.Obj.Material.Diffuse.G;
-                    b += lambert * light.Color.B * intersection.Obj.Material.Diffuse.B;
+                    materialColor += lambert * light.Color * intersection.Obj.Material.Diffuse;
+
                 }
 
-                return new RealColor(r, g, b).ToColor();
+                if (iteration > 10 || intersection.Obj.Material.ReflectionCoefficient <= 0)
+                    return materialColor;
+
+                var reflectionAngle = 2.0f * (Vector3D.DotProduct(viewRay.Direction, normal));
+                var reflectionRay = new Ray(start, viewRay.Direction - reflectionAngle * normal);
+
+                var reflectedColor = GetColorForRay(reflectionRay, iteration + 1);
+
+                if (reflectedColor == null)
+                    return materialColor;
+
+                return materialColor*(1 - intersection.Obj.Material.ReflectionCoefficient) +
+                       reflectedColor*intersection.Obj.Material.ReflectionCoefficient;
             }
 
-            return Background;
+            //return null;
+            return new RealColor(Background);
         }
 
         private Ray GetRayForViewportPixel(int x, int y)
